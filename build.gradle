@@ -1,51 +1,43 @@
-apply plugin: 'java-library'
-apply plugin: 'net.serenity-bdd.aggregator'
-
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    jcenter()
+plugins {
+    id 'java'
+    id 'net.serenity-bdd.serenity-gradle-plugin' version '4.2.34'
 }
 
-buildscript {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        jcenter()
-    }
-    dependencies {
+group = 'co.sqasa'
+version = '1.0-SNAPSHOT'
 
-        classpath("net.serenity-bdd:serenity-gradle-plugin:2.0.80")
-    }
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(17) }
 }
 
+repositories { mavenCentral() }
+
+sourceSets {
+    test {
+        java.srcDir 'test/java'
+        resources.srcDir 'test/resources'
+    }
+}
 
 dependencies {
-
-    implementation 'net.serenity-bdd:serenity-junit:2.0.80'
-    implementation 'net.serenity-bdd:serenity-cucumber:1.9.45'
-    implementation 'net.serenity-bdd:serenity-core:2.0.80'
-    implementation 'org.slf4j:slf4j-simple:1.7.7'
-    implementation 'com.google.guava:guava:23.0'
-    implementation group: 'org.apache.poi', name: 'poi', version: '3.17'
-    implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '3.17'
-
-
-
-
+    testImplementation "net.serenity-bdd:serenity-cucumber:4.2.34"
+    testImplementation "net.serenity-bdd:serenity-junit:4.2.34"
+    testImplementation "net.serenity-bdd:serenity-screenplay-webdriver:4.2.34"
+    testImplementation "org.assertj:assertj-core:3.25.3"
+    testImplementation "junit:junit:4.13.2"
 }
 
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 
 test {
-
-    ignoreFailures = true
+    useJUnit()                          // JUnit4; Gradle detecta @RunWith
+    testLogging.showStandardStreams = true
+    // Si algún día cambias el nombre del runner y no termina en *Test:
+    // include '**/*Runner*.class', '**/*Test.class'
+    finalizedBy 'aggregate'             // genera el reporte Serenity al final
+    systemProperties System.getProperties()   // propaga file.encoding a la JVM de test
+    ignoreFailures = true   // continúa el build aunque haya tests Failed
+    finalizedBy 'aggregate' // genera el HTML de Serenity pase lo que pase  // propaga file.encoding a la JVM de test
 }
 
-
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
-}
-
-
-gradle.startParameter.continueOnFailure = true
+serenity { reports = ["single-page-html"] }
